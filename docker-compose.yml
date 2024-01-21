@@ -1,5 +1,21 @@
 version: '3'
 
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: ./AirflowDk
+  env_file:
+    - airflow.env
+  volumes:
+    - ./jobs:/opt/airflow/jobs
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
+    - ./requirements.txt:/opt/airflow/requirements.txt
+  depends_on:
+    - postgres
+  networks:
+    - confluent
 services:
   # manage a kafka
   zookeeper:
@@ -105,26 +121,15 @@ services:
       retries: 5
   # schema register allows the kafka to visualize and the control centrol listening event from schema register and make a ui
   webserver:
-    image: apache/airflow:2.6.0-python3.9
+    <<: *airflow-common
     command: webserver
     entrypoint: ['/opt/airflow/script/entrypoint.sh'] # a command that use for init webserver
     depends_on:
       - postgres
-    environment:
-      - LOAD_EX=n
-      - EXECUTOR=Sequential
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      - AIRFLOW_WEBSERVER_SECRET_KEY=this_is_a_very_secured_key
     logging:
       options:
         max-size: 10m
         max-file: "3"
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./data:/
-      - ./script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
-      - ./requirements.txt:/opt/airflow/requirements.txt
     ports:
       - "8080:8080"
     healthcheck:
@@ -136,22 +141,11 @@ services:
       - confluent
 
   scheduler:
-    image: apache/airflow:2.6.0-python3.9
+    <<: *airflow-common
     depends_on:
       webserver:
         condition: service_healthy
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./data:/
-      - ./script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
-      - ./requirements.txt:/opt/airflow/requirements.txt
-    environment:
-      - LOAD_EX=n
-      - EXECUTOR=Sequential
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      - AIRFLOW_WEBSERVER_SECRET_KEY=this_is_a_very_secured_key
-    command: bash -c "pip install -r ./requirements.txt && airflow db upgrade && airflow scheduler"
+    command: bash -c "pip install -r ./requirements.txt && airflow db upgrade && airflow scheduler && airflow users create"
     networks:
       - confluent
 

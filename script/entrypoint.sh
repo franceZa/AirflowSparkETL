@@ -1,14 +1,16 @@
 #!/bin/bash
 set -e
 
+echo "Script is executing"
+
 if [ -e "/opt/airflow/requirements.txt" ]; then
-  $(command python) pip install --upgrade pip
-  $(command -v pip) install --user -r requirements.txt
+  $(command -v python3) -m pip install --upgrade pip
+  $(command -v pip3) install --user -r /opt/airflow/requirements.txt
 fi
 
 if [ ! -f "/opt/airflow/airflow.db" ]; then
-  airflow db init && \
-  airflow users create \
+  $(command -v airflow) db init && \
+  $(command -v airflow) users create \
     --username admin \
     --firstname admin \
     --lastname admin \
@@ -19,4 +21,4 @@ fi
 
 $(command -v airflow) db upgrade
 
-exec airflow webserver
+exec $(command -v airflow) webserver

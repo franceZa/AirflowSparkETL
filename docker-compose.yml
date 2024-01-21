@@ -123,7 +123,7 @@ services:
   webserver:
     <<: *airflow-common
     command: webserver
-    entrypoint: ['/opt/airflow/script/entrypoint.sh'] # a command that use for init webserver
+    entrypoint: ["/opt/airflow/script/entrypoint.sh"] # a command that use for init webserver
     depends_on:
       - postgres
     logging:

@@ -67,13 +67,15 @@ def create_spark_connection():
     s_conn = None
 
     try:
+        # set connection for spark cassandra, kafka and checking for version by MVN repository
+      
         s_conn = SparkSession.builder \
             .appName('SparkDataStreaming') \
             .config('spark.jars.packages', "com.datastax.spark:spark-cassandra-connector_2.13:3.4.1,"
                                            "org.apache.spark:spark-sql-kafka-0-10_2.13:3.4.1") \
             .config('spark.cassandra.connection.host', 'localhost') \
             .getOrCreate()
-
+        
         s_conn.sparkContext.setLogLevel("ERROR")
         logging.info("Spark connection created successfully!")
     except Exception as e:
@@ -150,7 +152,7 @@ if __name__ == "__main__":
             logging.info("Streaming is being started...")
 
             streaming_query = (selection_df.writeStream.format("org.apache.spark.sql.cassandra")
-                               .option('checkpointLocation', '/tmp/checkpoint')
+                               .option('checkpointLocation', '/tmp/checkpoint') # in case of failure
                                .option('keyspace', 'spark_streams')
                                .option('table', 'created_users')
                                .start())

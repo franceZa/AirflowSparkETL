@@ -22,7 +22,7 @@ def get_data():
 def format_data(res):
     data = {}
     location = res['location']
-    data['id'] = uuid.uuid4()
+    data['id'] = str(uuid.uuid4())
     data['first_name'] = res['name']['first']
     data['last_name'] = res['name']['last']
     data['gender'] = res['gender']
@@ -59,10 +59,11 @@ def stream_data():
             logging.error(f'An error occured: {e}')
             continue
 
-with DAG('user_automation',
+with DAG('ingest_user_info',
          default_args=default_args,
          schedule_interval='@daily',
-         catchup=False) as dag:
+         catchup=False,
+         tags= ['Kafka','Ingest','Api']) as dag:
 
     streaming_task = PythonOperator(
         task_id='stream_data_from_api',
